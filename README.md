@@ -611,3 +611,76 @@ The consistent negative QTY_Difference suggests there may be problems with how q
 - **Recording Discrepancies:** The negative QTY_Difference values across all entries point to potential errors in data recording or processing.
 - **Operational Impact:** These discrepancies could lead to stock shortages, delays in operations, or financial issues if not properly addressed.
 
+
+# Step 6: Analyzing Discrepancies Between Invoices and Payments
+
+### Function to Compare Columns from Purchase Requisitions and Purchase Orders
+
+```python
+def compare_requisitions_with_orders(df1, df2, key, col1, col2):
+    # Merge the dataframes on the specified key (e.g., ITEM Number) to align the data
+    merged_df = pd.merge(df1[[key, col1]], df2[[key, col2]], on=key, how='inner', suffixes=('_req', '_order'))
+
+    # Identify discrepancies where the quantity ordered does not match the quantity requisitioned
+    discrepancies = merged_df[merged_df[f'{col1}_req'] != merged_df[f'{col2}_order']]
+
+    return discrepancies
+```
+
+### Compare QTY between Purchase Requisitions and Purchase Orders
+
+```python
+pr_vs_po_discrepancies = compare_requisitions_with_orders(
+    purchase_requisition_df,
+    purchase_orders_df,
+    key='ITEM Number',
+    col1='QTY',
+    col2='QTY'
+)
+```
+
+
+### Save the Discrepancies to a CSV File for Further Analysis
+
+```python
+pr_vs_po_discrepancies.to_csv('pr_vs_po_discrepancies.csv', index=False)
+print(f"Discrepancies between Purchase Requisitions and Purchase Orders saved to 'pr_vs_po_discrepancies.csv'")
+```
+
+### Visualize the Discrepancies
+
+```python
+plt.figure(figsize=(12, 8))
+sns.scatterplot(x='QTY_req', y='QTY_order', data=pr_vs_po_discrepancies, hue='ITEM Number', palette='coolwarm')
+plt.title('Discrepancies between Requisitioned Quantity and Ordered Quantity')
+plt.xlabel('Quantity Requisitioned')
+plt.ylabel('Quantity Ordered')
+plt.axline((0, 0), slope=1, color='red', linestyle='--', label='Expected (QTY_req = QTY_order)')
+plt.legend()
+plt.show()
+```
+
+![download - 2024-08-19T140035 488](https://github.com/user-attachments/assets/4fc5e98b-4eb2-4886-8aa2-9eaf925ece8f)
+
+
+### Key Observations:
+
+- **Multiple Discrepancies for the Same ITEM Number:**
+  - Some ITEM numbers show discrepancies with different quantities, suggesting possible repeated orders or adjustments. For example:
+    - **ITEM Number 8003153:** 20 units were requisitioned, but only 11 were ordered, and in another instance, 11 units were requisitioned, but 20 were ordered.
+    - **ITEM Number 8001326:** Has multiple discrepancies with varying quantities, such as 16 requisitioned but only 10 or 17 ordered.
+
+- **Significant Discrepancies:**
+  - Some ITEM numbers show large differences between the quantities requisitioned and the quantities ordered, which may need further investigation. Examples include:
+    - **ITEM Number 8003130:** 3 units were requisitioned, but 15 were ordered.
+    - **ITEM Number 8001815:** 23 units were requisitioned, but only 4 were ordered.
+
+- **Unknown ITEM Numbers:**
+  - There are several entries with "Unknown" ITEM numbers, which likely represent cases where data is missing or incorrectly entered. This can complicate reconciliation and should be addressed to improve data accuracy.
+
+- **Frequent Small Discrepancies:**
+  - Some ITEM numbers have small differences in quantities, which might occur due to rounding errors, partial deliveries, or minor adjustments in orders.
+  
+- **Example Cases:**
+  - **ITEM Number 8000891:** There are discrepancies where 21 units were requisitioned but only 20 were ordered, and vice versa.
+  - **ITEM Number 8000241:** There is a case where 1 unit was requisitioned, but 12 were ordered, indicating a possible data entry error or miscommunication.
