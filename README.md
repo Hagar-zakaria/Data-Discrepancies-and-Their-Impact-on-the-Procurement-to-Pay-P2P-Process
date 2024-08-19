@@ -862,3 +862,39 @@ earlier_invoices.to_csv('earlier_invoices_discrepancies.csv', index=False)
 - A C YULE GROUP
 
 
+### Step 10 : Analyzing Unit Cost Discrepancies
+
+```python
+import pandas as pd
+
+# Calculate the expected unit cost (e.g., average cost for each item)
+expected_cost_df = purchase_orders_df.groupby('ITEM Number')['Unit Cost'].mean().reset_index()
+expected_cost_df.columns = ['ITEM Number', 'Expected Unit Cost']
+
+# Merge the expected costs with the original purchase orders dataframe
+merged_cost_df = pd.merge(purchase_orders_df, expected_cost_df, on='ITEM Number', how='left')
+
+# Identify discrepancies where the actual unit cost deviates significantly from the expected cost
+cost_discrepancies = merged_cost_df[merged_cost_df['Unit Cost'] != merged_cost_df['Expected Unit Cost']]
+
+# Display the cost discrepancies
+print("Cost Discrepancies:")
+print(cost_discrepancies)
+
+# Save the cost discrepancies to a CSV file
+cost_discrepancies.to_csv('cost_discrepancies.csv', index=False)
+
+# Group the discrepancies by supplier
+cost_discrepancies_by_supplier = cost_discrepancies.groupby('SUPPLIER_NAME').agg({
+    'ITEM Number': 'count',
+    'Unit Cost': 'sum',
+    'Expected Unit Cost': 'sum'
+}).reset_index()
+cost_discrepancies_by_supplier.columns = ['Supplier Name', 'Number of Discrepancies', 'Total Actual Cost', 'Total Expected Cost']
+
+# Save the discrepancies by supplier to a CSV file
+cost_discrepancies_by_supplier.to_csv('cost_discrepancies_by_supplier.csv', index=False)
+```
+
+![image](https://github.com/user-attachments/assets/12f30f3a-c950-4ef4-9c4d-e5d2a3d523f4)
+
