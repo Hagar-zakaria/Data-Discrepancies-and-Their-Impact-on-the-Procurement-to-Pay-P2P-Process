@@ -221,4 +221,61 @@ These significant outliers could indicate potential issues such as:
 - Large or bulk orders that, while potentially legitimate, should be verified.
 - Possible data entry errors or anomalies that require correction.
 
+# Step 3: Analyze Correlations Among Outliers
 
+### Cross-Dataset Correlation Analysis
+
+```python
+# Merge the datasets on a common key or align them (for this example, we'll align them directly)
+merged_df = pd.concat([
+    purchase_orders_df[['PO_Amount']].rename(columns={'PO_Amount': 'Purchase Order Amount'}),
+    invoices_received_df[['GROSS', 'NET', 'VAT']]
+], axis=1).dropna()
+
+# Calculate correlation matrix
+corr_cross = merged_df.corr()
+
+# Visualize correlation matrix
+plt.figure(figsize=(12, 10))
+sns.heatmap(corr_cross, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
+plt.title('Cross-Dataset Correlation Matrix: PO_Amount vs Invoice Amounts')
+plt.show()
+
+# Display correlation matrix
+print(corr_cross)
+```
+![download - 2024-08-19T122400 903](https://github.com/user-attachments/assets/f15751c6-abca-45bd-b27c-86702f7ffec2)
+
+
+## Cross-Dataset Correlation Results (Simplified)
+
+### Purchase Order Amount and GROSS
+
+- **Correlation Coefficient:** 0.010
+- **Interpretation:** The link between the purchase order amounts and the gross amounts on the invoices is very weak. This suggests that what’s billed doesn’t closely match what was ordered, indicating possible discrepancies between the two.
+
+### Purchase Order Amount and NET
+
+- **Correlation Coefficient:** 0.010
+- **Interpretation:** Similarly, the weak link between purchase order amounts and net amounts on invoices indicates potential inconsistencies in pricing or quantities. What was ordered and what was invoiced might not be aligning well.
+
+### Purchase Order Amount and VAT
+
+- **Correlation Coefficient:** 0.010
+- **Interpretation:** The weak correlation here suggests that VAT on invoices doesn’t align well with the amounts ordered. This could point to issues like overbilling or gaps between procurement and accounting processes.
+
+### GROSS, NET, and VAT
+
+- **Correlation Coefficients:**
+  - **GROSS and NET:** 0.999995
+  - **GROSS and VAT:** 0.999832
+  - **NET and VAT:** 0.999768
+- **Interpretation:** These three components (GROSS, NET, VAT) are almost perfectly aligned with each other on the invoices, which is expected and good from an accounting perspective. However, this strong alignment contrasts with their weak link to the purchase order amounts.
+
+### Summary and Recommendations
+
+- **Discrepancies Between Purchase Orders and Invoices:** The weak correlations between what’s ordered and what’s billed (GROSS, NET, VAT) suggest potential problems. These might include:
+  - **Overbilling:** Invoices might be higher than the corresponding purchase orders.
+  - **Procurement and Billing Misalignment:** Differences in what was ordered versus what was billed could be due to errors or inefficiencies in the procurement process.
+
+**In simple terms, the data shows that there might be significant issues between what was supposed to be purchased and what was actually billed. These discrepancies should be investigated to ensure accuracy and prevent overcharges.**
