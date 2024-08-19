@@ -898,3 +898,182 @@ cost_discrepancies_by_supplier.to_csv('cost_discrepancies_by_supplier.csv', inde
 
 ![image](https://github.com/user-attachments/assets/12f30f3a-c950-4ef4-9c4d-e5d2a3d523f4)
 
+## Key Observations from the Cost Discrepancies Analysis
+
+### Suppliers with the Most Discrepancies:
+- **BRIGGS EQUIPMENT UK LTD** has the most issues, with 16 discrepancies adding up to over £50,000. This suggests a consistent problem with cost accuracy from this supplier, which needs immediate attention and possibly renegotiation.
+- **MEDLAND SANDERS AND TWOSE LIMITED** and **SALEPOINT LTD** each have 5 discrepancies, but their average cost differences are smaller, though still worth noting.
+
+### Suppliers with Significant Total Deviation:
+- **ELB PARTNERS LTD** had just one discrepancy, but it was a big one, with a total difference of -£19,285.85. This could be a major mistake or an outlier that needs to be looked into closely.
+- **BRIGGS EQUIPMENT UK LTD** again shows up with a total difference of £50,048.86, reinforcing the need for further investigation.
+
+### Positive vs. Negative Deviations:
+- Some suppliers, like **MACE INDUSTRIES LTD** (+£4,475.93) and **LYRECO UK LIMITED** (+£4,783.95), had actual costs that were higher than expected. This could mean that initial cost estimates were too low or that prices went up and weren't reflected in the purchase orders.
+- Others, like **MEDLAND SANDERS AND TWOSE LIMITED** (-£4,171.56) and **NIFTYLIFT LTD** (-£8,190.69), had significant negative differences, which might point to billing errors or discounts that weren’t properly recorded.
+
+### Suppliers with Outlier Discrepancies:
+- **ELB PARTNERS LTD** and **NIFTYLIFT LTD** had extreme negative deviations, suggesting possible pricing errors or mismatches in the procurement process.
+
+### Concentration of Discrepancies:
+- The fact that so many discrepancies are concentrated with a few suppliers, especially **BRIGGS EQUIPMENT UK LTD**, suggests there might be ongoing issues either with the supplier's billing or with the way the company manages procurement data.
+
+
+
+# Step 11 ; Duplicate PRs
+
+```python
+# Filter out rows with 'Unknown' or placeholder values before detecting duplicates
+filtered_pr_df = purchase_requisition_df[
+    (purchase_requisition_df['ITEM Number'] != 'Unknown') &
+    (purchase_requisition_df['PR Date'] != pd.to_datetime('1900-01-01')) &
+    (purchase_requisition_df['QTY'] != 0.0)
+]
+
+# Detect duplicate PRs based on key columns such as ITEM Number and QTY
+duplicate_prs = filtered_pr_df[
+    filtered_pr_df.duplicated(subset=['ITEM Number', 'QTY'], keep=False)
+]
+
+# Save the filtered duplicates to a CSV
+duplicate_prs.to_csv('filtered_duplicate_prs.csv', index=False)
+display(duplicate_prs)
+
+# Visualize the filtered duplicate PRs count by ITEM Number
+plt.figure(figsize=(10, 6))
+sns.countplot(y='ITEM Number', data=duplicate_prs, order=duplicate_prs['ITEM Number'].value_counts().index)
+plt.title('Count of Duplicate Purchase Requisitions by ITEM Number (Filtered)')
+plt.xlabel('Count')
+plt.ylabel('ITEM Number')
+plt.show()
+```
+
+![image](https://github.com/user-attachments/assets/c6807441-0456-4f81-863f-8f0d3cdf571f)
+
+
+
+## Duplicate Purchase Requisitions
+
+### 5813923.0 - ULK Store
+
+- **ITEM Number:** 8003926.0
+- **QTY:** 21 units
+- **PR Date:** 2018-01-01 00:00:00
+- **Discrepancy:** This purchase requisition is a duplicate entry of the same item and quantity.
+- **Scenario/Risk:** If this duplicate requisition leads to an unintended order, it could result in overstocking, tying up capital, and potentially increasing storage costs. There is also a risk of confusion in inventory management, where the item might be mistakenly thought to be in higher demand than it actually is.
+
+### 5810063.0 - ULK Store
+
+- **ITEM Number:** 8003926.0
+- **QTY:** 21 units
+- **PR Date:** 2018-01-15 00:00:00
+- **Discrepancy:** This purchase requisition is a duplicate entry of the same item and quantity.
+- **Scenario/Risk:** The presence of two identical requisitions could also lead to issues in supplier management, where the supplier might be unsure of the correct quantity to deliver. This could cause delays in order fulfillment or necessitate order adjustments later in the procurement process.
+
+
+# Step 12; Detect Incomplete Purchase Requisitions
+
+### Code to Detect Incomplete PRs
+
+```python
+# Detect incomplete PRs where 'ITEM Number' or 'QTY' is unknown or zero
+incomplete_prs = purchase_requisition_df[
+    (purchase_requisition_df['ITEM Number'] == 'Unknown') |
+    (purchase_requisition_df['QTY'] == 0.0) |
+    (purchase_requisition_df['PR Date'] == pd.to_datetime('1900-01-01'))
+]
+
+# Save the incomplete PRs to a CSV
+incomplete_prs.to_csv('incomplete_prs.csv', index=False)
+display(incomplete_prs)
+
+# Visualize the count of incomplete PRs by missing field
+plt.figure(figsize=(10, 6))
+sns.countplot(y='ITEM Number', data=incomplete_prs, order=incomplete_prs['ITEM Number'].value_counts().index)
+plt.title('Count of Incomplete Purchase Requisitions by ITEM Number')
+plt.xlabel('Count')
+plt.ylabel('ITEM Number')
+plt.show()
+```
+
+![download - 2024-08-19T163023 374](https://github.com/user-attachments/assets/869fe20d-7ece-4431-b9ab-accfb8d45c8b)
+
+## Spotlight on the Discrepancies
+
+### 21 Incomplete Purchase Requisitions
+
+#### What We Found:
+A total of 21 purchase requisitions were identified as incomplete. These records are missing critical details such as 'ITEM Number,' 'QTY,' and 'PR Date,' with all fields filled with placeholder values like "Unknown" or "1900-01-01."
+
+#### Visual Impact:
+The bar chart highlights the extent of this issue, showing that the 'ITEM Number' "Unknown" appears 21 times. This indicates a systematic problem where critical item information was never recorded.
+
+#### Key Records Lacking Accountability:
+
+- **Missing PR Numbers:**  
+  All affected records list the PR Number as "Unknown," making it impossible to trace back to the origin of these requisitions. This lack of traceability is a serious concern in maintaining accountability and ensuring proper order processing.
+
+- **Default Dates:**  
+  The 'PR Date' for all incomplete records is set to "1900-01-01," a clear indication that the actual requisition dates were not captured, which can lead to significant delays in procurement.
+
+- **Supplier Ambiguity:**
+
+  - **Supplier Details Missing:**  
+    Without a supplier name, these requisitions are orphaned from the procurement process, rendering them unfulfillable. This ambiguity poses a risk of missed orders and potential production halts.
+
+### Impact on the P2P Process
+
+1. **Operational Delays and Financial Losses:**
+
+   - **Impact:** Incomplete or erroneous requisitions cause delays in order processing, leading to potential stock shortages, missed deadlines, and increased costs due to expedited shipping or last-minute supplier changes.
+   - **Scenario:** For example, without knowing the specific item or supplier, the procurement team may be unable to place orders in a timely manner, resulting in halted production lines or unfulfilled customer demands.
+
+2. **Risk of Miscommunication and Error:**
+
+   - **Impact:** The lack of specific 'Prepared By' and 'Reviewed By' details in these records means there’s no clear accountability. This can lead to confusion, duplicated efforts, or even the failure to execute necessary follow-up actions.
+   - **Scenario:** In a situation where a supplier queries the status of an order, the procurement team may struggle to provide accurate updates, leading to strained supplier relationships.
+
+3. **Data Integrity Issues:**
+
+   - **Impact:** Placeholder values like "Unknown" and "1900-01-01" degrade the overall data quality, making it difficult to perform accurate reporting, forecasting, or auditing. This can lead to poor decision-making and compliance issues.
+   - **Scenario:** During an audit, the presence of these incomplete records could raise red flags, potentially leading to fines or other penalties if the issues are not resolved.
+
+# Step 13; Purchase Orders vs. Invoices: Amount Discrepancies
+
+### Merging Purchase Orders and Invoices
+
+To identify discrepancies between the amounts in purchase orders (POs) and invoices, we first merged the two datasets on the `PO_Number` field. This allowed us to directly compare the `PO_Amount` from the purchase orders with the `GROSS` amount from the invoices.
+
+```python
+# Merge Purchase Orders and Invoices on PO Number
+po_inv_merged = pd.merge(
+    purchase_orders_df[['PO_Number', 'PO_Amount']],
+    invoices_received_df[['ORDER_NO', 'GROSS']],
+    left_on='PO_Number',
+    right_on='ORDER_NO',
+    how='inner'
+)
+```
+![image](https://github.com/user-attachments/assets/d2d579ca-3cdf-423d-8614-96a0d6cded8c)
+
+![download - 2024-08-19T163650 936](https://github.com/user-attachments/assets/b1812916-3647-445a-861c-c5e47ea06e60)
+
+## Key Observations from the Purchase Orders vs. Invoices Amount Discrepancies
+
+### Unknown Purchase Order Number
+- **Observation:** The label "Unknown" on the x-axis suggests that the original purchase order numbers were either missing or not properly recorded in the dataset. During data cleaning, these missing values were filled in with "Unknown."
+- **Large Discrepancy:** The significant height of the bar representing "Unknown" indicates a substantial discrepancy between the purchase order amount and the invoice amount. This could be due to various reasons, such as incorrect data entry, invoice errors, or miscommunication between the procurement and finance departments.
+
+### Impact on the P2P Process
+
+#### Risk of Overpayment or Underpayment
+- **Impact:** Large discrepancies like this could lead to the company either overpaying or underpaying its suppliers. Overpayment results in unnecessary cash outflows, while underpayment could strain supplier relationships.
+
+#### Audit and Compliance Issues
+- **Impact:** Discrepancies, especially when linked to "Unknown" purchase orders, may trigger red flags during audits, as they suggest a lack of proper record-keeping and financial controls.
+
+#### Operational Inefficiencies
+- **Impact:** The presence of unknown or incorrect data can cause delays in processing payments and resolving disputes. This leads to operational inefficiencies, as extra time and resources are required to identify and correct these issues.
+
+
+
