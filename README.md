@@ -223,6 +223,8 @@ These significant outliers could indicate potential issues such as:
 
 # Step 3: Analyze Correlations Among Outliers
 
+In this section, we explore the correlations between various financial components such as purchase order amounts and invoice totals (GROSS, NET, VAT). Understanding these relationships is crucial for identifying potential discrepancies and ensuring that what is ordered aligns accurately with what is billed. A weak correlation in these areas can highlight areas where overbilling or misalignment in procurement processes may be occurring, warranting further investigation.
+
 ### Cross-Dataset Correlation Analysis
 
 ```python
@@ -247,7 +249,7 @@ print(corr_cross)
 ![download - 2024-08-19T122400 903](https://github.com/user-attachments/assets/f15751c6-abca-45bd-b27c-86702f7ffec2)
 
 
-## Cross-Dataset Correlation Results (Simplified)
+## Cross-Dataset Correlation Results 
 
 ### Purchase Order Amount and GROSS
 
@@ -279,3 +281,5 @@ print(corr_cross)
   - **Procurement and Billing Misalignment:** Differences in what was ordered versus what was billed could be due to errors or inefficiencies in the procurement process.
 
 **In simple terms, the data shows that there might be significant issues between what was supposed to be purchased and what was actually billed. These discrepancies should be investigated to ensure accuracy and prevent overcharges.**
+
+
