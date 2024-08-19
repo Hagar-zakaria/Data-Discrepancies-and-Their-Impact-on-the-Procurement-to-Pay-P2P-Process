@@ -282,4 +282,203 @@ print(corr_cross)
 
 **In simple terms, the data shows that there might be significant issues between what was supposed to be purchased and what was actually billed. These discrepancies should be investigated to ensure accuracy and prevent overcharges.**
 
+# Step 4: Analysis of Discrepancies between Vendor Bank Details and Payments
+
+```python
+# Compare Vendor Bank Details with Payments
+merged_vendor_payments = pd.merge(vendor_df[['SUPPLIER_NAME', 'PAYEE_NAME', 'BANK_ACCT']],
+                                  payments_df[['SUPPLIER_NAME', 'PAID AMOUNT', 'Bank Details']],
+                                  on='SUPPLIER_NAME', how='inner')
+
+bank_discrepancies = merged_vendor_payments[merged_vendor_payments['BANK_ACCT'] != merged_vendor_payments['Bank Details']]
+bank_discrepancies.to_csv('vendor_vs_payments_bank_discrepancies.csv', index=False)
+print(f"Discrepancies in vendor bank details saved to 'vendor_vs_payments_bank_discrepancies.csv'")
+```
+
+### Vendor vs Payments Discrepancies Visualization
+# Vendor vs Payments Discrepancies
+
+```python
+plt.figure(figsize=(10, 6))
+sns.countplot(y='SUPPLIER_NAME', data=bank_discrepancies)
+plt.title('Count of Bank Account Discrepancies by Supplier')
+plt.xlabel('Number of Discrepancies')
+plt.ylabel('Supplier Name')
+plt.show()
+```
+![download - 2024-08-19T123747 527](https://github.com/user-attachments/assets/f9447eba-ac9c-4711-8553-2b61b6b2f8e5)
+
+### Visualizing Amounts with Bank Discrepancies
+
+```python
+plt.figure(figsize=(12, 8))
+sns.barplot(x='PAID AMOUNT', y='SUPPLIER_NAME', data=bank_discrepancies, ci=None)
+plt.title('Total Paid Amount with Bank Account Discrepancies by Supplier')
+plt.xlabel('Total Paid Amount')
+plt.ylabel('Supplier Name')
+plt.show()
+```
+![download - 2024-08-19T123832 591](https://github.com/user-attachments/assets/5e340d99-b1e8-42e0-ab22-85c995f6c4df)
+
+## Results of Discrepancies between Vendor Bank Details and Payments
+
+Here’s a straightforward explanation of the payment discrepancies we found, including the key details:
+
+### BRIGGS EQUIPMENT UK LTD
+
+- **Number of Issues:** 3
+- **Recorded Bank Account:** 08-67-30/73313715
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:**
+  - £16,972.67
+  - £82,194.32
+  - £5,921.18
+
+**Why It’s Concerning:** A total of £105,088.17 was sent to a different bank account than what we have on record for this supplier. This means the supplier might not get paid, or the money could end up in the wrong account altogether.
+
+### Other Suppliers with Issues
+
+#### DAVLYN PROPERTIES (WIGAN) LTD
+- **Recorded Bank Account:** 17-67-88/73276308
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £3,730.56
+
+#### JB TRANSPORT
+- **Recorded Bank Account:** 37-85-27/81781216
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £2,185.00
+
+#### JIS (EUROPE) LIMITED
+- **Recorded Bank Account:** 36-75-66/13731168
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £2,549.61
+
+#### MACE INDUSTRIES LTD
+- **Recorded Bank Account:** 47-12-09/19703100
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £127,565.52
+
+#### PACKEXE LTD
+- **Recorded Bank Account:** 66-73-61/19897612
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £13,428.36
+
+#### PRAMAC (UK) LTD
+- **Recorded Bank Account:** 60-73-63/79275624
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £13,079.52
+
+#### PROGRESSIVE PRODUCTS LTD
+- **Recorded Bank Account:** 58-88-41/84511844
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £43,961.28
+
+#### T W JONES
+- **Recorded Bank Account:** 35-29-94/64071985
+- **Bank Account Used for Payment:** 33-69-90/78912345
+- **Total Amount Paid:** £27,703.20
+
+### Why These Issues Matter
+
+- **Mismatched Accounts:** We found 12 cases where payments were made to the wrong bank account (33-69-90/78912345) instead of the correct one listed for each supplier.
+- **Total Money at Risk:** The total amount paid using incorrect bank details is significant, which could lead to a major financial loss if the payments don’t reach the right accounts.
+
+### What We Need to Do Now
+
+- **Verify Payments:** We should immediately check with the suppliers to confirm whether they received the payments and update their bank details if needed.
+- **Correct Errors:** Fix any mistakes in our system to make sure future payments go to the correct accounts.
+
+# Step 5: Analyzing Discrepancies between Purchase Orders and Goods Receipt Notes
+
+It's crucial to ensure that the quantity of goods ordered matches the quantity received. Discrepancies between purchase orders and goods receipt notes can lead to inventory inaccuracies, operational delays, and financial discrepancies. In this step, we analyze the differences between the quantities ordered and the quantities received by comparing the Purchase Orders (POs) with the corresponding Goods Receipt Notes (GRNs). Through this analysis, we aim to identify patterns of over-delivery, under-delivery, and potential recording errors that could impact the efficiency and accuracy of the P2P process.
+
+### Custom Function to Compare Columns
+
+```python
+# Custom function to compare two columns from different datasets
+def compare_columns(df1, df2, key, col1, col2):
+    # Merge the two dataframes on the specified key
+    merged_df = pd.merge(df1[[key, col1]], df2[[key, col2]], on=key, how='inner')
+
+    # Identify where the columns do not match
+    discrepancies = merged_df[merged_df[col1] != merged_df[col2]]
+
+    return discrepancies
+
+# Compare Purchase Orders with Goods Receipt Notes
+po_vs_grn_discrepancies = compare_columns(purchase_orders_df, goods_receipt_notes_df, key='PO_Number', col1='QTY', col2='QTY Received')
+po_vs_grn_discrepancies.to_csv('po_vs_grn_discrepancies.csv', index=False)
+print(f"Discrepancies between Purchase Orders and Goods Receipt Notes saved to 'po_vs_grn_discrepancies.csv'")
+```
+
+
+### Visualizing Discrepancies for Purchase Orders vs. Goods Receipt Notes
+
+```python
+plt.figure(figsize=(12, 8))
+sns.scatterplot(x='QTY', y='QTY Received', data=po_vs_grn_discrepancies, hue='PO_Number', palette='viridis')
+```
+
+### Highlighting the discrepancies
+
+```python
+plt.title('Discrepancies between Ordered Quantity and Received Quantity')
+plt.xlabel('Quantity Ordered')
+plt.ylabel('Quantity Received')
+plt.axline((0, 0), slope=1, color='red', linestyle='--', label='Expected (QTY = QTY Received)')
+plt.legend()
+plt.show()
+```
+
+![download - 2024-08-19T131054 916](https://github.com/user-attachments/assets/8e440ab7-7d52-4bf8-bad4-d7add8164c3c)
+
+
+### Analytics of Discrepancies between Purchase Orders vs. Goods Receipt Notes
+
+#### What the Scatter Plot Shows:
+The scatter plot compares the number of items that were ordered to the number of items that were actually received for various purchase orders. Each dot represents a specific purchase order, and the position of the dot in relation to the red dashed line helps us understand whether more or fewer items were received than ordered.
+
+#### Key Observations:
+
+**Over-Delivery (Dots Above the Red Line):**
+
+- **PO Number HH0839093:** Ordered 15 units, but received 19 units.
+- **PO Number AA1239093:** Ordered 20 units, but received 25 units.
+- **PO Number GG0539100:** Ordered 23 units, but received 29 units.
+- **PO Number EE0339086:** Ordered 25 units, but received 31 units.
+
+**What This Means:** These orders received more items than were ordered. This could be due to errors in ordering, suppliers delivering more than requested, or mistakes in recording the received quantities.
+
+**Under-Delivery (Dots Below the Red Line):**
+
+- **PO Number EE0539100:** Ordered 18 units, but received only 9 units.
+- **PO Number FF0139114:** Ordered 21 units, but received only 11 units.
+- **PO Number BB0139100:** Ordered 21 units, but received only 16 units.
+- **PO Number AA1039107:** Ordered 15 units, but received only 8 units.
+
+**What This Means:** These orders received fewer items than were ordered. This could be because of shortages during delivery, damage to items during transit, or mistakes in recording what was received.
+
+**Exact Matches (Dots on the Red Line):**
+The red line represents perfect matches where the number of items ordered equals the number of items received. However, in this analysis, there are no dots on the line, meaning that every order had some level of discrepancy.
+
+#### Specific Cases to Highlight:
+
+- **PO Number GG1239107:** This purchase order appears twice with conflicting information:
+  - One record shows 17 units ordered and 11 received.
+  - Another record shows 11 units ordered and 17 received.
+  
+**What This Suggests:** There might be an issue where quantities were swapped or recorded incorrectly.
+
+**PO Numbers with High Variability:**
+
+- **EE0339086 (25 ordered, 31 received)** and **HH0339100 (25 ordered, 31 received)** show significant over-deliveries.
+- **FF0139114** and **BB0139100** consistently show under-deliveries, which could point to a recurring problem in the ordering or receiving process.
+
+#### Summary of Observations:
+- **Over-Deliveries:** Some orders received more items than were ordered, which might lead to waste or confusion.
+- **Under-Deliveries:** Some orders received fewer items than ordered, potentially causing shortages or delays in operations.
+- **Inconsistent Recording:** The case of **GG1239107** highlights possible mistakes in how data is recorded, which could lead to inaccuracies in inventory.
+
+Overall, this analysis shows that there are several issues with how quantities are ordered and received, and these discrepancies could lead to inefficiencies or errors in inventory management.
+
 
