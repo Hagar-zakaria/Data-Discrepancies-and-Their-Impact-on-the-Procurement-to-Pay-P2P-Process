@@ -803,7 +803,62 @@ po_vs_inv_date_discrepancies.head()
 ![image](https://github.com/user-attachments/assets/3e3ea55d-244b-42fb-a6a0-cde2e22e1b06)
 
 
+The table above shows instances where the invoice date is before the purchase order date, which is typically not expected in a well-functioning procurement system. These discrepancies might be due to data entry errors, or it could indicate a problem in the invoicing process where invoices are issued before formal purchase orders are completed.
 
+# Step 9 ; Identifying and Analyzing Discrepancies Between Invoice Dates and Purchase Order Dates
 
+```python
+# Convert INVDT_DATE and PO_Date to datetime format
+merged_df['INVDT_DATE'] = pd.to_datetime(merged_df['INVDT_DATE'])
+merged_df['PO_Date'] = pd.to_datetime(merged_df['PO_Date'])
+
+# Identify discrepancies where INVDT_DATE is earlier than PO_Date
+earlier_invoices = merged_df[merged_df['INVDT_DATE'] < merged_df['PO_Date']]
+
+# Group by supplier to find which suppliers have the most discrepancies
+discrepancies_by_supplier = earlier_invoices['SUPPLIER_NAME_x'].value_counts()
+
+# Count the total number of orders with invoices earlier than the PO date
+count_earlier_invoices = earlier_invoices.shape[0]
+
+# Display the results
+print("Suppliers with the most discrepancies:")
+print(discrepancies_by_supplier)
+print(f"Total orders with invoices earlier than the PO date: {count_earlier_invoices}")
+
+# Optionally save the results to CSV files for further analysis
+discrepancies_by_supplier.to_csv('discrepancies_by_supplier.csv', index=True)
+earlier_invoices.to_csv('earlier_invoices_discrepancies.csv', index=False)
+```
+![download - 2024-08-19T155459 901](https://github.com/user-attachments/assets/21768121-0682-42b3-af45-e923d6db103d)
+
+### Total Discrepancies:
+- 27 orders had invoices dated earlier than the purchase orders.
+
+### Top Suppliers with Discrepancies:
+- **BRIGGS EQUIPMENT UK LTD**: 4 discrepancies
+- **GRAFTERS**: 2 discrepancies
+- **ALLBUILD PRODUCTS**: 2 discrepancies
+
+### Other Suppliers with Discrepancies (Each with 1 discrepancy):
+- ROUDEN PIPETEK
+- JOSEPH PARR (ALCO) LTD.
+- HILCREST DESIGN LTD
+- SIMMONS OF STAFFORD
+- SOUNDSORBA LTD
+- SALEPOINT LTD
+- TAYLOR MAXWELL & CO LTD
+- LYRECO UK LIMITED
+- DOUGLAS SCOTT
+- NORMAN JAMIESON LTD
+- MEDLAND SANDERS AND TWOSE LIMITED
+- ERNEST BENNETT (SHEFFIELD) LTD.
+- ELB PARTNERS LTD
+- VIBROPLANT PLC
+- THE SPECTRA GROUP LTD
+- BLUE DIAMOND TECHNOLOGIES LTD
+- CHEMAIDE LTD
+- RED FUNNEL
+- A C YULE GROUP
 
 
