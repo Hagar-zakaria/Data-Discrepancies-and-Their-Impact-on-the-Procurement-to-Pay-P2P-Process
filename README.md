@@ -684,3 +684,126 @@ plt.show()
 - **Example Cases:**
   - **ITEM Number 8000891:** There are discrepancies where 21 units were requisitioned but only 20 were ordered, and vice versa.
   - **ITEM Number 8000241:** There is a case where 1 unit was requisitioned, but 12 were ordered, indicating a possible data entry error or miscommunication.
+
+ 
+  # Step 7 ; Discrepancies between Invoice Dates and Payment Dates
+
+```python
+# Merge the dataframes on the specified key (e.g., SUPPLIER_NAME or INVNO)
+merged_df = pd.merge(invoices_received_df[['INVNO', 'INVDT_DATE']], payments_df[['INVNO', 'PAYMENT DATE']], on='INVNO', how='inner')
+
+# Inspect the merged DataFrame
+print(merged_df.head())
+
+# Function to compare expected payment dates (Invoice Date) with actual payment dates
+def compare_payment_dates(df1, df2, key, col1, col2):
+    # Merge the dataframes on the specified key and include 'SUPPLIER_NAME'
+    merged_df = pd.merge(df1[[key, 'SUPPLIER_NAME', col1]], df2[[key, 'SUPPLIER_NAME', col2]], on=[key, 'SUPPLIER_NAME'], how='inner')
+
+    # Identify discrepancies where the invoice date does not match the actual payment date
+    discrepancies = merged_df[merged_df[col1] != merged_df[col2]]
+
+    return discrepancies
+
+# Compare Invoice Dates with Payment Dates
+invoice_vs_payment_discrepancies = compare_payment_dates(
+    invoices_received_df,  # Invoices dataframe
+    payments_df,           # Payments dataframe
+    key='INVNO',           # Assuming invoices and payments can be matched on 'INVNO' (Invoice Number)
+    col1='INVDT_DATE',     # Invoice date in invoices dataframe
+    col2='PAYMENT DATE'    # Actual payment date in payments dataframe
+)
+
+# Save the discrepancies to a CSV file
+invoice_vs_payment_discrepancies.to_csv('invoice_vs_payment_discrepancies_Dates.csv', index=False)
+print(f"Discrepancies between Invoice Dates and Payment Dates saved to 'invoice_vs_payment_discrepancies.csv'")
+
+# Visualize the discrepancies
+plt.figure(figsize=(12, 8))
+sns.histplot(data=invoice_vs_payment_discrepancies, x='INVDT_DATE', y='PAYMENT DATE', hue='SUPPLIER_NAME')
+plt.title('Discrepancies between Invoice Dates and Payment Dates')
+plt.xlabel('Invoice Date')
+plt.ylabel('Payment Date')
+plt.show()
+```
+
+![download - 2024-08-19T145645 625](https://github.com/user-attachments/assets/59c14648-324f-4edc-8a9f-cf0320c48ea6)
+
+### Analytics of Discrepancies between Invoice Dates and Payment Dates
+
+#### Wide Range of Payment Delays
+The gaps between when invoices were issued and when payments were made vary widely. Some payments were made on time, while others were delayed by a few days to several weeks.
+
+#### Consistent Late Payments
+Certain suppliers, like **BRIGGS EQUIPMENT UK LTD** and **R F AMIES(KIDDERMINSTER)LTD**, consistently experienced payment delays across multiple invoices. This might indicate ongoing issues in the payment process for these suppliers.
+
+#### Suppliers with Timely Payments
+A few suppliers, such as **WORTHINGTON & GRAHAM LTD** and **NIFTYLIFT LTD.**, have payments that closely align with their invoice dates, indicating that these suppliers were paid on time.
+
+#### Clusters of Discrepancies
+There are noticeable clusters of payment discrepancies, especially around certain dates in January 2018. This suggests that payment processing was particularly problematic during these periods.
+
+### Significant Delays
+For some suppliers, like **FILPLASTICS(UK)LTD** and **MACE INDUSTRIES LTD**, payments were significantly delayed, sometimes by more than 20 days. These delays could harm supplier relationships and potentially lead to late fees or penalties.
+
+#### Supplier-Specific Issues
+Some suppliers, like **BRIGGS EQUIPMENT UK LTD**, show discrepancies across multiple invoices, which may indicate recurring issues with how their invoices are processed or prioritized.
+
+#### Unexpected Early Payments
+In some cases, payments were made either before or very close to the invoice date, such as with **WORTHINGTON & GRAHAM LTD** (paid on the same day as invoicing). This could suggest either preferential treatment or errors in the payment processing system.
+
+#### Unidentified Patterns
+The heatmap reveals a few blank spots where no payments were made on expected dates, such as on January 7th. These gaps might be worth investigating to see if they represent missed payments or data entry issues.
+
+
+# Step 8; Discrepancies Between PO Date and Invoice Date
+
+To ensure that our procurement and invoicing processes are aligned, it's crucial to check if there are any discrepancies between the Purchase Order (PO) date and the Invoice Date. A significant discrepancy where an invoice date is before the purchase order date may indicate errors in the documentation process.
+
+### Code to Detect Discrepancies
+
+The following code is used to identify discrepancies where the invoice date is earlier than the purchase order date:
+
+```python
+def check_po_vs_invoice_date(po_df, inv_df, po_date_col, inv_date_col, po_number_col, inv_po_number_col):
+    # Convert the date columns to datetime format
+    po_df[po_date_col] = pd.to_datetime(po_df[po_date_col])
+    inv_df[inv_date_col] = pd.to_datetime(inv_df[inv_date_col])
+
+    # Merge the DataFrames on the Purchase Order Number
+    merged_df = pd.merge(po_df[[po_number_col, po_date_col]],
+                         inv_df[[inv_po_number_col, inv_date_col]],
+                         left_on=po_number_col,
+                         right_on=inv_po_number_col,
+                         how='inner')
+
+    # Identify rows where the invoice date is before the purchase order date
+    discrepancies = merged_df[merged_df[inv_date_col] < merged_df[po_date_col]]
+
+    return discrepancies
+
+# Checking for discrepancies
+po_vs_inv_date_discrepancies = check_po_vs_invoice_date(
+    purchase_orders_df,
+    invoices_received_df,
+    po_date_col='PO_Date',
+    inv_date_col='INVDT_DATE',
+    po_number_col='PO_Number',
+    inv_po_number_col='ORDER_NO'
+)
+
+# Save the discrepancies to a CSV file
+po_vs_inv_date_discrepancies.to_csv('po_vs_inv_date_discrepancies.csv', index=False)
+print(f"Discrepancies where Invoice Date is before Purchase Order Date saved to 'po_vs_inv_date_discrepancies.csv'")
+
+# Display the discrepancies DataFrame
+po_vs_inv_date_discrepancies.head()
+```
+
+![image](https://github.com/user-attachments/assets/3e3ea55d-244b-42fb-a6a0-cde2e22e1b06)
+
+
+
+
+
+
