@@ -1,5 +1,7 @@
 # Data Discrepancies and Their Impact on the Procurement-to-Pay (P2P) Process
 
+![635a32476c1c8e292fc23deb_Procure-to-Pay-Cycle1](https://github.com/user-attachments/assets/cced202a-e640-4419-90d5-33b0fd9499c1)
+
 ## Introduction
 
 The procurement-to-pay (P2P) process is a critical business operation that ensures goods and services are ordered, received, and paid for correctly. However, discrepancies in data can disrupt this process, leading to financial losses, operational delays, and strained supplier relationships. In this article, we will explore various data discrepancies found in a P2P dataset, analyze their impact, and suggest improvements to prevent future issues.
