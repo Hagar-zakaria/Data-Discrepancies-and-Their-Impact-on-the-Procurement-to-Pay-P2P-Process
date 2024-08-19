@@ -482,3 +482,132 @@ The red line represents perfect matches where the number of items ordered equals
 Overall, this analysis shows that there are several issues with how quantities are ordered and received, and these discrepancies could lead to inefficiencies or errors in inventory management.
 
 
+# Step 5;  Compare Purchase Requisitions with Purchase Orders
+
+```python
+def compare_columns(df1, df2, key, col1, col2):
+    # Merge the two dataframes on the key column to align the data
+    merged_df = pd.merge(df1[[key, col1]], df2[[key, col2]], on=key, how='inner', suffixes=('_df1', '_df2'))
+
+    # Find rows where the values in the specified columns are not equal
+    discrepancies = merged_df[merged_df[f'{col1}_df1'] != merged_df[f'{col2}_df2']]
+
+    return discrepancies
+
+# Remove any leading or trailing spaces from column names
+purchase_requisition_df.columns = purchase_requisition_df.columns.str.strip()
+purchase_orders_df.columns = purchase_orders_df.columns.str.strip()
+
+print("Columns in purchase_requisition_df:", purchase_requisition_df.columns)
+print("Columns in purchase_orders_df:", purchase_orders_df.columns)
+
+if 'QTY' in purchase_requisition_df.columns and 'QTY' in purchase_orders_df.columns:
+    print("Column 'QTY' exists in both dataframes.")
+else:
+    print("Column 'QTY' does not exist in one or both dataframes.")
+
+# Compare Purchase Requisitions with Purchase Orders
+pr_vs_po_discrepancies = compare_columns(purchase_requisition_df, purchase_orders_df, key='PR_Number', col1='QTY', col2='QTY')
+pr_vs_po_discrepancies.to_csv('pr_vs_po_discrepancies.csv', index=False)
+print(f"Discrepancies between Purchase Requisitions and Purchase Orders saved to 'pr_vs_po_discrepancies.csv'")
+
+# Merge PR with PO and check for discrepancies
+pr_po_merge = pd.merge(purchase_requisition_df, purchase_orders_df, on='PR_Number', how='left', suffixes=('_PR', '_PO'))
+
+# Column to compare
+column_to_compare = 'QTY'
+
+# Ensure both columns are numeric
+pr_po_merge[f'{column_to_compare}_PR'] = pd.to_numeric(pr_po_merge[f'{column_to_compare}_PR'], errors='coerce')
+pr_po_merge[f'{column_to_compare}_PO'] = pd.to_numeric(pr_po_merge[f'{column_to_compare}_PO'], errors='coerce')
+
+# Calculate the difference
+pr_po_merge[f'{column_to_compare}_Difference'] = pr_po_merge[f'{column_to_compare}_PR'] - pr_po_merge[f'{column_to_compare}_PO']
+
+# Filter rows where there is a discrepancy in the QTY column
+pr_po_discrepancies = pr_po_merge[
+    pr_po_merge[f'{column_to_compare}_Difference'].notna() &
+    pr_po_merge[f'{column_to_compare}_Difference'].ne(0)
+]
+
+# Handle 'Unknown' values
+unknown_discrepancies = pr_po_discrepancies[
+    (pr_po_discrepancies['PR_Number'] == 'Unknown') |
+    (pr_po_discrepancies[f'{column_to_compare}_PR'] == 0) |
+    (pr_po_discrepancies[f'{column_to_compare}_PO'] == 0)
+]
+
+# Save discrepancies to CSV
+pr_po_discrepancies.to_csv('pr_po_discrepancies.csv', index=False)
+unknown_discrepancies.to_csv('unknown_discrepancies.csv', index=False)
+
+# Display discrepancies
+print("All Discrepancies:")
+print(pr_po_discrepancies)
+
+print("\nDiscrepancies involving 'Unknown' values:")
+print(unknown_discrepancies)
+
+# Visualization of all discrepancies
+plt.figure(figsize=(10, 8))
+sns.scatterplot(data=pr_po_discrepancies, x=f'{column_to_compare}_PR', y=f'{column_to_compare}_PO', hue='PR_Number', palette='viridis')
+plt.plot([pr_po_discrepancies[f'{column_to_compare}_PR'].min(), pr_po_discrepancies[f'{column_to_compare}_PR'].max()],
+         [pr_po_discrepancies[f'{column_to_compare}_PR'].min(), pr_po_discrepancies[f'{column_to_compare}_PR'].max()],
+         'r--', label='Expected (PR = PO)')
+plt.title('Discrepancies between PR and PO Quantities')
+plt.xlabel('QTY in PR')
+plt.ylabel('QTY in PO')
+plt.legend()
+plt.show()
+
+# Visualization of discrepancies involving 'Unknown' values
+plt.figure(figsize=(10, 8))
+sns.scatterplot(data=unknown_discrepancies, x=f'{column_to_compare}_PR', y=f'{column_to_compare}_PO', hue='PR_Number', palette='coolwarm')
+plt.plot([unknown_discrepancies[f'{column_to_compare}_PR'].min(), unknown_discrepancies[f'{column_to_compare}_PR'].max()],
+         [unknown_discrepancies[f'{column_to_compare}_PR'].min(), unknown_discrepancies[f'{column_to_compare}_PR'].max()],
+         'r--', label='Expected (PR = PO)')
+plt.title('Discrepancies Involving Unknown Values between PR and PO Quantities')
+plt.xlabel('QTY in PR')
+plt.ylabel('QTY in PO')
+plt.legend()
+plt.show()
+```
+
+![image](https://github.com/user-attachments/assets/2721125f-761c-4ee4-b2e1-3cc76b2792dd)
+
+![download - 2024-08-19T133942 495](https://github.com/user-attachments/assets/fa1a9048-8601-41f9-b66e-290fb09374c6)
+
+
+## Discrepancies Analytics between Purchase Requisitions and Purchase Orders
+
+### Under-Delivery (Negative QTY_Difference):
+
+- **PO Number GG0439107 (ITEM Number 8000570):** Ordered 3 units but received 0 units (-3 QTY_Difference).
+- **PO Number FF1039100 (ITEM Number 8003104):** Ordered 11 units but received 0 units (-11 QTY_Difference).
+- **PO Number FF0839100 (ITEM Number 8001136):** Ordered 15 units but received 0 units (-15 QTY_Difference).
+- **PO Number HH0839093 (ITEM Number 8000075):** Ordered 15 units but received 0 units (-15 QTY_Difference).
+- **PO Number DD0939107 (ITEM Number 8000624):** Ordered 25 units but received 0 units (-25 QTY_Difference).
+- **PO Number AA0139107 (ITEM Number 8001426):** Ordered 22 units but received 0 units (-22 QTY_Difference).
+- **PO Number GG1439128 (ITEM Number 8000832):** Ordered 7 units but received 0 units (-7 QTY_Difference).
+- **PO Number EE0339128 (ITEM Number 8001801):** Ordered 17 units but received 0 units (-17 QTY_Difference).
+- **PO Number HH0639121 (ITEM Number 8000683):** Ordered 23 units but received 0 units (-23 QTY_Difference).
+- **PO Number HH1639107 (ITEM Number 8001468):** Ordered 11 units but received 0 units (-11 QTY_Difference).
+
+### What This Means:
+These orders had significant under-delivery, where no items were received even though they were ordered. This could point to issues like incomplete deliveries, errors in processing the orders, or mistakes in recording the items received.
+
+### Exact Matches (QTY_Difference is Zero):
+There are no exact matches in the dataset, meaning that for all purchase orders, the received quantities did not exactly match the ordered quantities.
+
+### Potential Recording Issues:
+The consistent negative QTY_Difference suggests there may be problems with how quantities were recorded, such as incorrect data entry or loss of information during data transfer.
+
+### Specific Cases to Highlight:
+- **PO Number GG0439107** shows multiple instances of under-delivery, which may indicate a recurring problem with this item or supplier.
+- **PO Number DD0939107** also has a significant under-delivery, suggesting there might be a bigger issue in the supply chain or ordering process.
+
+### Summary of Observations:
+- **Under-Deliveries:** All cases observed are under-deliveries, suggesting there might be serious challenges in ensuring that the quantities ordered are actually delivered.
+- **Recording Discrepancies:** The negative QTY_Difference values across all entries point to potential errors in data recording or processing.
+- **Operational Impact:** These discrepancies could lead to stock shortages, delays in operations, or financial issues if not properly addressed.
+
