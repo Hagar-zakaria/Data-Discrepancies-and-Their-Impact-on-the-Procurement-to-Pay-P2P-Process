@@ -1075,5 +1075,84 @@ po_inv_merged = pd.merge(
 #### Operational Inefficiencies
 - **Impact:** The presence of unknown or incorrect data can cause delays in processing payments and resolving disputes. This leads to operational inefficiencies, as extra time and resources are required to identify and correct these issues.
 
+# Step 13; The Difference Between Paid Amount and Invoice Amount
+
+### Analysis Process
+
+To identify discrepancies between the amounts paid and the amounts invoiced, the following steps were taken:
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Merge Payments and Invoices on Invoice Number
+pay_inv_merged = pd.merge(
+    payments_df[['INVNO', 'PAID AMOUNT']],
+    invoices_received_df[['INVNO', 'GROSS']],
+    on='INVNO',
+    how='inner'
+)
+
+# Calculate the difference between Paid Amount and Invoice Amount
+pay_inv_merged['Amount_Difference'] = pay_inv_merged['PAID AMOUNT'] - pay_inv_merged['GROSS']
+
+# Identify discrepancies where the difference is not zero
+payment_discrepancies = pay_inv_merged[pay_inv_merged['Amount_Difference'].abs() > 1]
+
+# Save discrepancies to CSV
+payment_discrepancies.to_csv('payment_vs_invoice_amount_discrepancies.csv', index=False)
+
+# Visualize discrepancies with a bar plot
+plt.figure(figsize=(12, 6))
+sns.barplot(x='INVNO', y='Amount_Difference', data=payment_discrepancies, palette="Blues_d")
+plt.title('Amount Discrepancies Between Payments and Invoices')
+plt.xlabel('Invoice Number')
+plt.ylabel('Amount Difference')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.show()
+
+# Print the discrepancies in a table format
+display(payment_discrepancies)
+```
+
+![image](https://github.com/user-attachments/assets/63b3869f-ea01-4924-830a-7cca8bb3f920)
+
+
+## Key Findings
+
+### Significant Discrepancies
+
+- **Invoice SINV7308799**:
+  - **Paid Amount**: £137,291.54
+  - **Invoiced Amount**: £161,317.56
+  - **Discrepancy**: -£24,026.02
+
+- **Invoice 67731**:
+  - **Paid Amount**: £156,691.26
+  - **Invoiced Amount**: £184,112.23
+  - **Discrepancy**: -£27,420.97
+
+### Potential Overpayments
+
+- **Invoice 2792**:
+  - **Paid Amount**: £37,474.39
+  - **Invoiced Amount**: £33,871.09
+  - **Discrepancy**: +£3,603.30
+
+## Business Impact on P2P Process
+
+### Financial Exposure
+**Impact**: Large discrepancies, particularly underpayments, could lead to strained supplier relationships or legal disputes, as suppliers might seek to recover these amounts. Overpayments represent a direct financial loss to the company.
+
+### Operational Delays
+**Impact**: Consistent discrepancies may indicate systemic issues in the procurement-to-pay (P2P) process, such as miscommunication between departments or errors in data entry. These issues could cause delays in supply chain operations, affecting inventory levels and production schedules.
+
+### Audit and Compliance Risks
+**Impact**: Discrepancies might attract scrutiny from auditors and regulators, especially if they are not addressed promptly. This can lead to penalties or damage to the company's reputation.
+
+### Need for Process Improvement
+**Impact**: The high frequency of discrepancies suggests that the P2P process might benefit from tighter controls, better integration between procurement and finance systems, and enhanced training for staff involved in invoice processing.
+
 
 
